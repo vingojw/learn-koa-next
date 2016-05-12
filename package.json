@@ -1,0 +1,28 @@
+{
+  "name": "koanext",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "babel src -d lib",
+    "debug": "babel src -d lib && node-debug lib/app.js",
+    "start": "./node_modules/.bin/nodemon"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "babel-core": "^6.8.0",
+    "babel-loader": "^6.2.4",
+    "babel-plugin-syntax-async-functions": "^6.8.0",
+    "babel-plugin-transform-async-to-generator": "^6.8.0",
+    "babel-polyfill": "^6.8.0",
+    "babel-preset-es2015-node5": "^1.2.0",
+    "babel-preset-stage-3": "^6.5.0",
+    "koa": "^2.0.0",
+    "koa-bodyparser": "^3.0.0",
+    "koa-logger": "^2.0.0",
+    "koa-router": "^7.0.1",
+    "node-dev": "^3.1.1",
+    "nodemon": "^1.9.2"
+  }
+}
