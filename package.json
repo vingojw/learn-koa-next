@@ -6,7 +6,7 @@
   "scripts": {
     "build": "babel src -d lib",
     "debug": "babel src -d lib && node-debug lib/app.js",
-    "start": "./node_modules/.bin/nodemon"
+    "dev": "./node_modules/.bin/nodemon"
   },
   "author": "",
   "license": "ISC",
@@ -21,6 +21,7 @@
     "koa": "^2.0.0",
     "koa-bodyparser": "^3.0.0",
     "koa-logger": "^2.0.0",
+    "koa-multer": "^1.0.0",
     "koa-router": "^7.0.1",
     "node-dev": "^3.1.1",
     "nodemon": "^1.9.2"
