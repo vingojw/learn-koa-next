@@ -8,9 +8,31 @@ var logger = require('koa-logger');
 app.use(logger());
 
 //上传
+debugger;
+//每次使用 一个 multer 都会生成一个实例
 var multer = require('koa-multer');
-var uploads = multer({dest:'uploads/'});
-var uploads1 = multer({dest:'uploads1/'});
+//var uploadsSingle = multer({dest:'uploads/'});
+
+//单文件
+var storage = multer.diskStorage({ 
+	destination: 'uploads/',  // 注意这里的格式呀，  囧
+	filename: function (req, file, cb) {
+		debugger;
+		 var fileFormat = (file.originalname).split(".");
+		cb(null, file.fieldname + '-lalalalala' + Date.now()+'.'+fileFormat.pop())
+	}
+})
+var uploadsSingle = multer({storage: storage});
+
+//多文件
+var uploadsArray = multer({dest:'uploads1/'});
+
+// 带进度条的上传
+var uploadProgress = multer({dest:'uploadProgress/'});
+
+// multer.diskStorage({
+
+// });
 
 //router post请求  https://github.com/koajs/bodyparser/tree/3.x
 var bodyParser = require('koa-bodyparser');
@@ -35,16 +57,71 @@ router
 		// Cookie.prototype.overwrite = false;
 		ctx.body = ` 
 		<form action="/profile" method="POST" enctype="multipart/form-data">
-		  单文件:
+		  单文件: 
 		  <input type="file" name="avatar">
 		  <input type="submit" value="Upload Image">
-		</form>
+		</form> 
 		<form action="/profilelist" method="POST" enctype="multipart/form-data">
 		  多文件:
-		  <input type="file" name="avatar">
-		  <input type="file" name="gallery">
+		  <input type="file" name="avatar" multiple />
 		  <input type="submit" value="Upload Image">
-		</form>`;
+		</form>
+
+		<p>进度条：</p>
+		<input id="filename" type="file" multiple="multiple" />
+		<progress id="uploadprogress" min="0" max="100" value="0">0</progress>
+		<button id="btn">上传</button>
+		<script>
+			document.getElementById('btn').onclick = function(){
+				go();
+			}
+			function go(){
+				debugger;
+				var xhr = new XMLHttpRequest();
+
+				var files = document.getElementById('filename').files;
+				var formData = new FormData();
+				formData.append('progress', files[0]); // index 为第 n 个文件的索引
+
+
+				xhr.open('post', '/profileProgress'); // url 为提交的后台地址
+				
+				// 定义上传完成后的回调函数
+				xhr.onload = function () {
+					if (xhr.status === 200) {
+					　　console.log('上传成功');
+					} else {
+					　　console.log('出错了');
+					}
+				};
+				//定义在 send 前面
+				xhr.upload.onprogress = function (event) {
+					if (event.lengthComputable) {
+						console.log(event.loaded);
+						console.log(event.total);
+						var complete = (event.loaded / event.total * 100 | 0);
+						var progress = document.getElementById('uploadprogress');
+						progress.value = progress.innerHTML = complete;
+					}
+				};
+				xhr.send(formData);
+				// xhr.upload.addEventListener("progress", function(event){
+				// 	　　　　　var complete = (event.loaded / event.total * 100 | 0);
+				// 	　　　　　var progress = document.getElementById('uploadprogress');
+				// 	　　　　　progress.value = progress.innerHTML = complete;
+				// }, false); 
+				// 处理上传进度
+				// xhr.addEventListener("load", uploadComplete, false); // 处理上传完成
+				// xhr.addEventListener("error", uploadFailed, false); // 处理上传失败
+				// xhr.addEventListener("abort", uploadCanceled, false); // 处理取消上传
+
+
+
+			}
+
+		</script>
+
+		`;
 	})
 	.get('/users/:id', function (ctx, next){
 		//http://localhost:3000/users/123
@@ -76,29 +153,45 @@ router
 	get('/close', function(ctx){
 		return ctx.req.destroy();
 	})
-	.post('/profile', uploads.single('avatar'),function(ctx,next){
-		 debugger;
-		 console.log(ctx);
-		 //ctx.req.file 看起来是下面这样
-		 // {
-		 //   "fieldname": "avatar",
-		 //   "originalname": "a.js",
-		 //   "encoding": "7bit",
-		 //   "mimetype": "application/javascript",
-		 //   "destination": "uploads/",
-		 //   "filename": "701f8f88c310f34401c2f74f337794b0",
-		 //   "path": "uploads\\701f8f88c310f34401c2f74f337794b0",
-		 //   "size": 6189
-		 // }
+
+	// multer上传相关
+	// 文章：https://cnodejs.org/topic/564f32631986c7df7e92b0db
+	// muilter.single(‘file’), //适用于单文件上传
+	// muilter.array(‘file’,num), //适用于多文件上传，num为最多上传个数，上传文件的数量可以小于num,
+	// muilter.fields(fields), //适用于混合上传，比如A类文件1个，B类文件2个。官方API有详细说明。
+	//单个文件
+	.post('/profile', uploadsSingle.single('avatar'),function(ctx){
+		ctx.body = `
+			上传成功${ctx.req.file.filename}
+			文件路径${ctx.req.file.path}
+		`;
+		console.log('上传成功'+ctx.req.file.filename);
+		console.log('文件路径'+ctx.req.file.path);
+		//ctx.req.file.filename  文件名
+		//ctx.req.file.path      文件路径
 	})
+	// .post('/profile', function(ctx,next){
+	// 	uploadsSingle.single('avatar')(ctx.req, ctx.res,function(err){
+	// 		if(err){
+	// 			console.log('出错了');
+	// 			return;
+	// 		}
+
+	// 		console.log('上传成功!');
+	// 	})
+	// }) 
 	//多文件
-	.post('/profilelist',multer({dest:'uploads1/'}).fields([
-		{ name: 'avatar', maxCount: 1 },
-		{ name: 'gallery', maxCount: 8 }
+	.post('/profilelist', uploadsArray.fields([
+		{ name: 'avatar', maxCount: 2 }
 	]), function(ctx){
-		ctx.body="oooook";
+		ctx.body="fieldsOk";
 	} )
- 
+	//带进度条的上传
+	.post('/profileProgress', uploadProgress.single('progress'),function(ctx, next){
+		ctx.body = "profileProgressOK";
+	})
+
+
 	function timeOut(ms){
 		return new Promise((resolve)=>{
 			setTimeout(function(){
