@@ -1,4 +1,6 @@
 'use strict';
+var fs = require('fs');
+var path = require('path');
 
 var Koa = require('koa');
 var app = new Koa();
@@ -7,8 +9,8 @@ var router = require('koa-router')();
 var logger = require('koa-logger');
 app.use(logger());
 
+
 //上传
-debugger;
 //每次使用 一个 multer 都会生成一个实例
 var multer = require('koa-multer');
 //var uploadsSingle = multer({dest:'uploads/'});
@@ -17,7 +19,6 @@ var multer = require('koa-multer');
 var storage = multer.diskStorage({ 
 	destination: 'uploads/',  // 注意这里的格式呀，  囧
 	filename: function (req, file, cb) {
-		debugger;
 		 var fileFormat = (file.originalname).split(".");
 		cb(null, file.fieldname + '-lalalalala' + Date.now()+'.'+fileFormat.pop())
 	}
@@ -29,10 +30,6 @@ var uploadsArray = multer({dest:'uploads1/'});
 
 // 带进度条的上传
 var uploadProgress = multer({dest:'uploadProgress/'});
-
-// multer.diskStorage({
-
-// });
 
 //router post请求  https://github.com/koajs/bodyparser/tree/3.x
 var bodyParser = require('koa-bodyparser');
@@ -55,73 +52,17 @@ router
 		// Cookie.prototype.httpOnly = true;
 		// Cookie.prototype.secure = false;
 		// Cookie.prototype.overwrite = false;
-		ctx.body = ` 
-		<form action="/profile" method="POST" enctype="multipart/form-data">
-		  单文件: 
-		  <input type="file" name="avatar">
-		  <input type="submit" value="Upload Image">
-		</form> 
-		<form action="/profilelist" method="POST" enctype="multipart/form-data">
-		  多文件:
-		  <input type="file" name="avatar" multiple />
-		  <input type="submit" value="Upload Image">
-		</form>
+		//ctx.throw('sss',502);  //抛出一个错误
+		
+		//载入静态文件
+		ctx.body = fs.createReadStream(path.join(__dirname, 'index.html'));
+		ctx.type = 'html'; // 不加这句访问的时候就会当文件下载下来。
+		 
 
-		<p>进度条：</p>
-		<input id="filename" type="file" multiple="multiple" />
-		<progress id="uploadprogress" min="0" max="100" value="0">0</progress>
-		<button id="btn">上传</button>
-		<script>
-			document.getElementById('btn').onclick = function(){
-				go();
-			}
-			function go(){
-				debugger;
-				var xhr = new XMLHttpRequest();
-
-				var files = document.getElementById('filename').files;
-				var formData = new FormData();
-				formData.append('progress', files[0]); // index 为第 n 个文件的索引
-
-
-				xhr.open('post', '/profileProgress'); // url 为提交的后台地址
-				
-				// 定义上传完成后的回调函数
-				xhr.onload = function () {
-					if (xhr.status === 200) {
-					　　console.log('上传成功');
-					} else {
-					　　console.log('出错了');
-					}
-				};
-				//定义在 send 前面
-				xhr.upload.onprogress = function (event) {
-					if (event.lengthComputable) {
-						console.log(event.loaded);
-						console.log(event.total);
-						var complete = (event.loaded / event.total * 100 | 0);
-						var progress = document.getElementById('uploadprogress');
-						progress.value = progress.innerHTML = complete;
-					}
-				};
-				xhr.send(formData);
-				// xhr.upload.addEventListener("progress", function(event){
-				// 	　　　　　var complete = (event.loaded / event.total * 100 | 0);
-				// 	　　　　　var progress = document.getElementById('uploadprogress');
-				// 	　　　　　progress.value = progress.innerHTML = complete;
-				// }, false); 
-				// 处理上传进度
-				// xhr.addEventListener("load", uploadComplete, false); // 处理上传完成
-				// xhr.addEventListener("error", uploadFailed, false); // 处理上传失败
-				// xhr.addEventListener("abort", uploadCanceled, false); // 处理取消上传
-
-
-
-			}
-
-		</script>
-
-		`;
+	})
+	.get('/chat',function(ctx, next){
+		ctx.body = fs.createReadStream(path.join(__dirname, 'chat.html'));
+		ctx.type = 'html'; // 不加这句访问的时候就会当文件下载下来。
 	})
 	.get('/users/:id', function (ctx, next){
 		//http://localhost:3000/users/123
@@ -229,10 +170,32 @@ router
 	// 	};
 	// });
 
+
 app
 	.use(router.routes())
 	.use(router.allowedMethods())
-	.listen(3000);
+	
+	//koa-send: 用于处理静态文件
+	//https://www.npmjs.com/package/koa-send
+	var send = require('koa-send');
+	app.use(async function (ctx, next){
+	  //if ('/' == ctx.path) return ctx.body = 'Try GET /package.json';
+	  await send(ctx, ctx.path);
+	})
+
+
+
+//socket相关
+var server = require('http').createServer(app.callback());
+var io = require('socket.io')(server);
+io.on('connection', function(socket){
+	console.log('a user connected');
+})
+ 
+app.listen(3000, function(){
+	console.log('listening on * 3000');
+})
+
 
 console.log('访问：http://localhost:3000');
 console.log('可以编辑./src/app.js，保存后自动重启服务');
