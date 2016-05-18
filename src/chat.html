@@ -5,26 +5,48 @@
 	<title>chat</title>
 </head>
 <body>
-	  <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font: 13px Helvetica, Arial; }
-      .chart form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
-      .chart form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
-      .chart form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
-      #messages { list-style-type: none; margin: 0; padding: 0; }
-      #messages li { padding: 5px 10px; }
-      #messages li:nth-child(odd) { background: #eee; }
+	<style>
+	* { margin: 0; padding: 0; box-sizing: border-box; }
+	html,body{height:100%;}
+	body { font: 13px Helvetica, Arial; }
+	.chatbox{width: 350px; position: relative; height: 100%; }
+	.chart {background: #000; padding: 3px; position: absolute; bottom: 0; left: 0; right: 0; }
+	.chart input { border: 0; padding: 10px; width: 80%;}
+	.chart button { width: 19%; margin-left:1%;background: rgb(130, 224, 255); border: none; padding: 10px; }
+	.messages { list-style-type: none; margin: 0; padding: 0; }
+	.messages li { padding: 5px 10px; }
+	.messages li:nth-child(odd) { background: #eee; }
     </style>
+
+<div class="chatbox">
+    <ul class="messages">
+    	<li v-for="msg in msgList" v-text="msg" track-by="$index"  ></li>
+    </ul>
     <div class="chart">
-    	<ul id="messages"></ul>
-        <form  action="">
-          <input id="m" autocomplete="off" /><button>Send</button>
-        </form>
+        <input v-model="msg" autocomplete="off" @keyup.enter="send"/><button @click="send">Send</button>
     </div>
-	
+</div>
 	<script src="/socket.io/socket.io.js"></script>
+	<script src="http://vuejs.org/js/vue.js"></script>
 	<script>
-	  var socket = io();
+		var socket = io();
+		var vm = new Vue({
+			el:'body',
+			data:{
+				msg:'',
+				msgList:[]
+			},
+			methods:{
+				send:function(){
+					console.log(this.msg);
+					socket.emit('chat message',this.msg);
+					this.msg = '';
+				}
+			}
+		});
+		socket.on('chat message', function(msg){
+			vm.msgList.push(msg);
+		});
 	</script>
 </body>
 </html>

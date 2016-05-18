@@ -169,32 +169,54 @@ router
 	// 	  }
 	// 	};
 	// });
+	
+
 
 
 app
 	.use(router.routes())
 	.use(router.allowedMethods())
 	
-	//koa-send: 用于处理静态文件
-	//https://www.npmjs.com/package/koa-send
-	var send = require('koa-send');
-	app.use(async function (ctx, next){
-	  //if ('/' == ctx.path) return ctx.body = 'Try GET /package.json';
-	  await send(ctx, ctx.path);
-	})
 
 
-
-//socket相关
-var server = require('http').createServer(app.callback());
-var io = require('socket.io')(server);
-io.on('connection', function(socket){
-	console.log('a user connected');
+//koa-send: 用于处理静态文件
+//http://stackoverflow.com/questions/32721311/koa-js-serving-static-files-and-rest-api
+// this last middleware catches any request that isn't handled by
+// koa-static or koa-router, ie your index.html in your example
+//https://www.npmjs.com/package/koa-send
+var send = require('koa-send');
+app.use(async function (ctx, next){
+  //if ('/' == ctx.path) return ctx.body = 'Try GET /package.json';
+  await send(ctx, ctx.path);
+  //console.log(ctx.path+'------------------');
+  //await send(ctx, '/src/socket.io/socket.io.js');
 })
+
+
+//socket 链接
+//https://www.npmjs.com/package/koa-socket
+var IO = require('koa-socket');
+var io = new IO();
+io.attach(app);
  
+
+io.on('connection', function (socket) {
+  console.log('a user connected');
+  
+});
+
+io.on('chat message', function (ctx, data) {
+	io.socket.emit('chat message', data);
+    console.log('message: ' + data);
+});
+ 
+io.socket.emit('chat message', {for:'everyone'});
+
 app.listen(3000, function(){
 	console.log('listening on * 3000');
 })
+
+
 
 
 console.log('访问：http://localhost:3000');

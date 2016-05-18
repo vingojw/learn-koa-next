@@ -24,8 +24,8 @@
     "koa-multer": "^1.0.0",
     "koa-router": "^7.0.1",
     "koa-send": "^3.2.0",
+    "koa-socket": "^4.3.0",
     "node-dev": "^3.1.1",
-    "nodemon": "^1.9.2",
-    "socket.io": "^1.4.6"
+    "nodemon": "^1.9.2"
   }
 }
