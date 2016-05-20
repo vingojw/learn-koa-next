@@ -9,6 +9,9 @@ var router = require('koa-router')();
 var logger = require('koa-logger');
 app.use(logger());
 
+//模拟请求
+var superagent = require('superagent');
+
 
 //上传
 //每次使用 一个 multer 都会生成一个实例
@@ -131,6 +134,19 @@ router
 	.post('/profileProgress', uploadProgress.single('progress'),function(ctx, next){
 		ctx.body = "profileProgressOK";
 	})
+	//模拟 .get('/users 接口
+	.get('/superagentUsers', async function(ctx){
+		var getUsers = await new Promise((resolve)=>{
+			superagent.get('http://localhost:3000/users/test').end(function(err,res){
+				console.log(res.text);
+				resolve(res.text);
+			})
+		});
+
+		ctx.body = getUsers;
+	})
+
+
 
 
 	function timeOut(ms){
@@ -193,7 +209,7 @@ app.use(async function (ctx, next){
 })
 
 
-//socket 链接
+//socket 链接  放在最后一个 use 后面
 //https://www.npmjs.com/package/koa-socket
 var IO = require('koa-socket');
 var io = new IO();
