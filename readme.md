@@ -1,4 +1,4 @@
-开发： npm start
+开发： npm run dev
 
 断点调试：npm run debug
 
